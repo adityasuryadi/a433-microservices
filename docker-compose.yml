@@ -1,0 +1,57 @@
+# docker compose versi yang di gunakan
+version: '3.3'
+
+# list services atau container yang di jlankan di aplikasi
+services:
+  # buat container dengan nama item-app dengan base image dari github container dengan nama image item-app tag v1
+  item-app:
+    image: "ghcr.io/adityasuryadi/item-app:v1"
+    container_name: "item-app"
+
+    # pointing port container dengan port 8080 ke luar,sehingga bisa di akses dari luar dengan port 80
+    ports:
+      - "80:8080"
+
+    # container item-app di jalankan setalah container item-db di jalankan
+    depends_on:
+      - item-db
+
+    # container akan restart jika container berhenti
+    restart: always
+
+    # membuat jaringan internal dengan nama app-network dalam satu Docker host
+    networks:
+      - app-network
+
+   # buat container dengan nama item-db dengan base image dari mongo versi 3  
+  item-db:
+    container_name: "item-db"
+    image: "mongo:3"
+
+     # pointing port container dengan port 27017 ke luar,sehingga bisa di akses dari luar dengan port 27017
+    ports:
+      - "27017:27017"
+    expose:
+      - 27017
+
+    # menyimpan volume di dalam direcotry di Docker host dir (app/data) menggunakan volume dengan nama app-data
+    volumes:
+      - "app-db:/data/db"
+    restart: always
+
+    # container akan restart jika container berhenti
+    networks:
+      - app-network
+
+# gunakan volume app-db yang udah di buat
+volumes:
+  app-db:
+    external:
+      true
+
+# container ini menggunakan network dengan nama app-network sehinggal antar kontainer dapat saling berkomunikasi 
+networks:
+  app-network:
+    driver: bridge
+
+
