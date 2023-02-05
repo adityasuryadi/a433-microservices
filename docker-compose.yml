@@ -8,9 +8,12 @@ services:
     image: "ghcr.io/adityasuryadi/item-app:v1"
     container_name: "item-app"
 
+     # jalankan npm start
+    command: npm start
+
     # pointing port container dengan port 8080 ke luar,sehingga bisa di akses dari luar dengan port 80
     ports:
-      - "80:8080"
+      - "8080:8080"
 
     # container item-app di jalankan setalah container item-db di jalankan
     depends_on:
@@ -43,11 +46,9 @@ services:
     networks:
       - app-network
 
-# gunakan volume app-db yang udah di buat
+# buat volume bernama app-db
 volumes:
   app-db:
-    external:
-      true
 
 # container ini menggunakan network dengan nama app-network sehinggal antar kontainer dapat saling berkomunikasi 
 networks:
