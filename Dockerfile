@@ -16,8 +16,8 @@ ENV NODE_ENV=production DB_HOST=item-db
 # saat buat image jalnakan perintah di bawah untuk menginstall package json node js dan build aplikasi node js nya
 RUN npm install --production --unsafe-perm && npm run build
 
-# jalankan instruksi npm start saat docker image dijalankan sebagai container,yang artinya jalankan npm start di container
-CMD ["npm","start"]
-
 # mengekspos port yang di gunakan container
 EXPOSE 8080
+
+# jalankan instruksi npm start saat docker image dijalankan sebagai container,yang artinya jalankan npm start di container
+CMD ["npm","start"]
