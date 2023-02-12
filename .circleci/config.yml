@@ -5,7 +5,7 @@ version: 2.1
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  say-hello:
+  lint-dockerfile:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
@@ -13,14 +13,57 @@ jobs:
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
+       # Checkout the repository files
+      - checkout
+      # Set up a separate Docker environment to run `docker` commands in
+      - setup_remote_docker
+      - run:
+          name: "Install Hadolint"
+          command: docker pull ghcr.io/hadolint/hadolint
+      - run:
+          name: "Run Hadolint"
+          command: docker run --rm -i ghcr.io/hadolint/hadolint < Dockerfile
+  test-app:  
+    docker:
+      - image: cimg/go:1.20.0
+    steps:
+      # Checkout the repository files
       - checkout
       - run:
-          name: "Say hello"
-          command: "echo Hello, World! :v"
+          name: "Run Test"
+          command: go test -v -short --count=1 $(go list ./...)
+
+  build-app-karsajobs: 
+    docker:
+      - image: cimg/base:stable
+    steps:
+      # Checkout the repository files
+      - checkout
+      # Set up a separate Docker environment to run `docker` commands in
+      - setup_remote_docker
+      - run:
+          name: "Build Image"
+          command: docker build -t karsajobs:latest .
+      - run:
+          name: "Rename Image"
+          command: docker tag karsajobs:latest ghcr.io/adityasuryadi/karsajobs:latest
+      - run:
+          name: "Login GITHUB"
+          command: echo $GITHUB_ACCESS_TOKEN | docker login ghcr.io -u adityasuryadi --password-stdin
+      - run:
+          name: "Push Image"
+          command: docker push ghcr.io/adityasuryadi/karsajobs:latest
+
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
-  say-hello-workflow:
+  karsajobs-workflow:
     jobs:
-      - say-hello
+      - lint-dockerfile
+      - test-app:
+          requires:
+            - lint-dockerfile
+      - build-app-karsajobs:
+          requires:
+            - test-app
