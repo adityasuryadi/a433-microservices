@@ -5,22 +5,57 @@ version: 2.1
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  say-hello:
-    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+lint-dockerfile:
+  # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+  # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+  docker:
+    - image: cimg/base:stable
+  # Add steps to the job
+  # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+  steps:
+    - run: 
+        name: "Checkout repository"
+        command: checkout
+    - run:
+        name: "Setup Docker ENV"
+        command: setup_remote_docker
+    - run:
+        name: "Install Hadolint"
+        command: docker pull ghcr.io/hadolint/hadolint
+    - run:
+        name: "Run Hadolint"
+        command: docker run --rm -i ghcr.io/hadolint/hadolint < Dockerfile
+
+build-app-karsajobs-ui: 
     docker:
-      - image: cimg/base:stable
-    # Add steps to the job
-    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    - image: cimg/base:stable
     steps:
-      - checkout
-      - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
+    - run: 
+        name: "Checkout repository"
+        command: checkout
+    - run:
+        name: "Setup Docker ENV"
+        command: setup_remote_docker
+    - run:
+        name: "Build Image"
+        command: docker build -t karsajobs-ui:latest .
+    - run:
+        name: "Rename Image"
+        command: docker tag karsajobs-ui:latest ghcr.io/adityasuryadi/karsajobs-ui:latest
+    - run:
+        name: "Login GITHUB"
+        command: echo $GITHUB_ACCESS_TOKEN | docker login ghcr.io -u adityasuryadi --password-stdin
+    - run:
+        name: "Push Image"
+        command: docker push ghcr.io/adityasuryadi/karsajobs-ui:latest
+
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
-  say-hello-workflow:
+  karsajobs-ui-workflow:
     jobs:
-      - say-hello
+      - lint-frontend-dockerfile
+      - build-app-karsajobs-ui:
+          requires:
+            - lint-dockerfile
